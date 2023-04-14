@@ -1,6 +1,6 @@
 import { Index, query } from './dist/index.mjs'
 
-const items = Array.from({ length: 100000 }, (_, i) => ({
+const items = Array.from({ length: 10000 }, (_, i) => ({
   id: i,
   data: {
     body: `hello world ${i}`,
@@ -28,23 +28,23 @@ profile(() => items.forEach(item => index.add(item.id, item)), 'add')
 
 profile(() => index.search([
   {
-    'data.number': [{ eq: 200 }],
+    'data.number': [{ gte: 100, lte: 200 }],
     // 'data.body': [{ eq: '821' }],
   },
   {
-    'data.number': [{ eq: 1000 }],
+    'data.number': [{ gt: 500, lt: 1000 }],
   },
 ]), 'search')
 
-profile(() => items.filter(item => ((item.data.number === 200 || item.data.number === 1000))), 'filter')
+profile(() => items.filter(item => ((item.data.number >= 100 && item.data.number <= 200) || (item.data.number > 500 && item.data.number < 1000))), 'filter')
 
 profile(() => query([
   {
-    'data.number': [{ eq: 200 }],
+    'data.number': [{ gte: 100, lte: 200 }],
     // 'data.body': [{ eq: 'hello world 821' }],
   },
   {
-    'data.number': [{ eq: 1000 }],
+    'data.number': [{ gt: 500, lt: 1000 }],
   },
 ], items), 'query')
 

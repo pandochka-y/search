@@ -79,14 +79,21 @@ export class Index {
     if (!index || !map)
       return new Set()
 
-    let ids: Set<string>
+    const ids: Set<string> = new Set()
 
     for (const condition of conditions) {
       let tokens: string[] = []
 
-      for (const [operation, query] of Object.entries(condition)) {
-        const tmp = new Set<string>()
+      const tmp = new Map<string, number>()
 
+      const addTmp = (key: string) => {
+        if (tmp.has(key))
+          tmp.set(key, tmp.get(key) + 1)
+        else
+          tmp.set(key, 1)
+      }
+
+      for (const [operation, query] of Object.entries(condition)) {
         switch (index.type) {
           case 'string':
             tokens = tokenizeMap[this._indexes[indexPath].tokenize](query)
@@ -98,26 +105,27 @@ export class Index {
         for (const token of tokens) {
           if (operation === 'eq') {
             if (map.has(token))
-              map.get(token)!.forEach(id => tmp.add(id))
+              addTmp(token)
           }
           else {
             map.forEach((ids, key) => {
               if (operation === 'lt' && key < token)
-                ids.forEach(id => tmp.add(id))
+                addTmp(key)
               else if (operation === 'lte' && key <= token)
-                ids.forEach(id => tmp.add(id))
+                addTmp(key)
               else if (operation === 'gt' && key > token)
-                ids.forEach(id => tmp.add(id))
+                addTmp(key)
               else if (operation === 'gte' && key >= token)
-                ids.forEach(id => tmp.add(id))
+                addTmp(key)
             })
           }
         }
-        if (!ids)
-          ids = tmp
-        else
-          ids = intersection([ids, tmp])
       }
+
+      tmp.forEach((value, key) => {
+        if (value === Object.entries(condition).length)
+          map.get(key)!.forEach(id => ids.add(id))
+      })
     }
 
     return ids
