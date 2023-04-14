@@ -1,6 +1,6 @@
-import { Index } from './dist/index.mjs'
+import { Index, query } from './dist/index.mjs'
 
-const items = Array.from({ length: 1000000 }, (_, i) => ({
+const items = Array.from({ length: 100000 }, (_, i) => ({
   id: i,
   data: {
     body: `hello world ${i}`,
@@ -26,17 +26,27 @@ const index = new Index({
 
 profile(() => items.forEach(item => index.add(item.id, item)), 'add')
 
-const result = profile(() => index.search([
+profile(() => index.search([
   {
-    'data.number': [{ gt: 10, lt: 1000 }],
-    'data.body': [{ eq: '821' }],
+    'data.number': [{ eq: 200 }],
+    // 'data.body': [{ eq: '821' }],
   },
   {
-    'data.number': [{ gt: 10, lt: 20 }],
+    'data.number': [{ eq: 1000 }],
   },
 ]), 'search')
 
-profile(() => items.filter(item => (item.data.number > 10 && item.data.number < 1000 && item.data.body.includes('821')) || (item.data.number > 10 && item.data.number < 20)), 'filter')
+profile(() => items.filter(item => ((item.data.number === 200 || item.data.number === 1000))), 'filter')
+
+profile(() => query([
+  {
+    'data.number': [{ eq: 200 }],
+    // 'data.body': [{ eq: 'hello world 821' }],
+  },
+  {
+    'data.number': [{ eq: 1000 }],
+  },
+], items), 'query')
 
 // console.log('result', result)
 // console.log('result', [...result.values()])
@@ -45,14 +55,14 @@ profile(() => items.filter(item => (item.data.number > 10 && item.data.number < 
 // index.export((key, value) => console.log(key, JSON.stringify(Array.from(value.keys()))))
 
 // function profile performance of a function
-async function profile(fn, name = 'default') {
+function profile(fn, name = 'default') {
   const start = Date.now()
-  const res = await fn()
+  const res = fn()
   const end = Date.now()
 
   console.group(name)
   if (res)
-    console.log('- res:', res)
+    console.log('- res.length:', res.length ? res.length : res.size)
   console.log('- time:', `${(end - start) / 1000}s`)
   console.groupEnd()
 

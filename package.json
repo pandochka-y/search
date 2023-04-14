@@ -16,7 +16,10 @@
     "test": "unbuild && node test.js",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {},
+  "dependencies": {
+    "fast-copy": "^3.0.1",
+    "rambda": "^7.5.0"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^0.38.4",
     "@typescript-eslint/eslint-plugin": "^5.58.0",

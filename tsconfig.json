@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "module": "ES6",
+        "moduleResolution": "node",
+        "lib": ["DOM", "ESNext" ],
+        "downlevelIteration": true
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

@@ -1,7 +1,15 @@
-// import { defineBuildConfig } from 'unbuild'
+import { defineBuildConfig } from 'unbuild'
 
-// export default defineBuildConfig({
-//   entries: [{ builder: 'mkdist', input: './src/index.ts' }, { builder: 'mkdist', input: './src/test.ts' }],
-//   preset: '@unbuild/preset-typescript',
-//   outDir: 'dist',
-// })
+export default defineBuildConfig({
+  // If entries is not provided, will be automatically inferred from package.json
+  entries: [
+    // default
+    './src/index',
+  ],
+
+  // Change outDir, default is 'dist'
+  outDir: 'dist',
+  failOnWarn: false,
+  // Generates .d.ts declaration file
+  declaration: true,
+})
