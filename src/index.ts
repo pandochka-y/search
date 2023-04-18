@@ -1,6 +1,6 @@
 import * as R from 'rambda'
 
-import { get, intersection, union } from './utils'
+import { get } from './utils'
 
 interface IndexOptions {
   document: {
@@ -72,72 +72,88 @@ export class Index {
     })
   }
 
-  searchIndex(indexPath: string, conditions: IndexQueryCondition[]): Set<string> {
-    const index = this._indexes[indexPath]
-    const map = this._map.get(indexPath)
+  search(query: Record<string, IndexQueryCondition[]>): Array<string> {
+    // const result: Set<string> = new Set()
 
-    if (!index || !map)
-      return new Set()
-
-    const ids: Set<string> = new Set()
-
-    for (const condition of conditions) {
-      let tokens: string[] = []
-
-      const tmp = new Map<string, number>()
-
-      const addTmp = (key: string) => {
-        if (tmp.has(key))
-          tmp.set(key, tmp.get(key) + 1)
-        else
-          tmp.set(key, 1)
-      }
-
-      for (const [operation, query] of Object.entries(condition)) {
-        switch (index.type) {
-          case 'string':
-            tokens = tokenizeMap[this._indexes[indexPath].tokenize](query)
-            break
-          case 'number':
-            tokens = [query]
-        }
-
-        for (const token of tokens) {
-          if (operation === 'eq') {
-            if (map.has(token))
-              addTmp(token)
-          }
-          else {
-            map.forEach((ids, key) => {
-              if (operation === 'lt' && key < token)
-                addTmp(key)
-              else if (operation === 'lte' && key <= token)
-                addTmp(key)
-              else if (operation === 'gt' && key > token)
-                addTmp(key)
-              else if (operation === 'gte' && key >= token)
-                addTmp(key)
-            })
-          }
-        }
-      }
-
-      tmp.forEach((value, key) => {
-        if (value === Object.entries(condition).length)
-          map.get(key)!.forEach(id => ids.add(id))
-      })
+    const tmp = new Map<string, number>()
+    const addTmp = (key: string) => {
+      if (tmp.has(key))
+        tmp.set(key, tmp.get(key) + 1)
+      else
+        tmp.set(key, 1)
     }
 
-    return ids
+    for (const [indexPath, conditions] of Object.entries(query)) {
+      // const resultTmp = new Map<string, number>()
+
+      const index = this._indexes[indexPath]
+      const map = this._map.get(indexPath)
+
+      if (!index || !map)
+        return []
+
+      // const ids: Set<string> = new Set()
+
+      for (const condition of conditions) {
+        let tokens: string[] = []
+
+        for (const [operation, operationQuery] of Object.entries(condition)) {
+          switch (index.type) {
+            case 'string':
+              tokens = tokenizeMap[this._indexes[indexPath].tokenize](operationQuery)
+              break
+            case 'number':
+              tokens = [operationQuery]
+          }
+
+          for (const token of tokens) {
+            if (operation === 'eq') {
+              if (map.has(token))
+                addTmp(token)
+            }
+            else {
+              map.forEach((ids, key) => {
+                if (operation === 'lt' && key < token)
+                  addTmp(ids)
+                else if (operation === 'lte' && key <= token)
+                  addTmp(ids)
+                else if (operation === 'gt' && key
+                > token)
+                  addTmp(ids)
+                else if (operation === 'gte' && key >= token)
+                  addTmp(ids)
+              })
+            }
+          }
+        }
+
+        const l = Object.keys(condition).length
+        // console.log('tmp', map.size)
+
+        tmp.forEach((value, key) => {
+          if (value < l) {
+            tmp.delete(key)
+            return
+          }
+
+          tmp.set(key, 666)
+        })
+      }
+
+      // return ids
+    }
+
+    return Array.from(tmp.keys())
   }
 
-  search(query: Record<string, IndexQueryCondition[]>[]) {
-    return union(query.map(conditions =>
-      intersection(Object.keys(conditions).map(indexPath =>
-        this.searchIndex(indexPath, conditions[indexPath]),
-      )),
-    ))
-  }
+  // search(query: Record<string, IndexQueryCondition[]>[]) {
+  //   return union(query.map(conditions =>
+  //     intersection(Object.keys(conditions).map((indexPath) => {
+  //       return this.searchIndex(indexPath, conditions[indexPath])
+  //     },
+  //     )),
+  //   ))
+  // }
 
   export(cb: (key: string, value: Map<string, Set<string>>) => void) {
     this._map.forEach((value, key) => {
