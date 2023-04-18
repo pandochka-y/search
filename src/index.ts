@@ -75,12 +75,11 @@ export class Index {
   search(query: Record<string, IndexQueryCondition[]>): Array<string> {
     // const result: Set<string> = new Set()
 
-    const tmp = new Map<string, number>()
-    const addTmp = (key: string) => {
-      if (tmp.has(key))
-        tmp.set(key, tmp.get(key) + 1)
-      else
-        tmp.set(key, 1)
+    const resultTmp = new Map<string, number>()
+
+    const addResultTmp = (key: string) => {
+      return resultTmp.has(key) ?
+        resultTmp.set(key, resultTmp.get(key) + 1) : resultTmp.set(key, 1)
     }
 
     for (const [indexPath, conditions] of Object.entries(query)) {
@@ -109,19 +108,19 @@ export class Index {
           for (const token of tokens) {
             if (operation === 'eq') {
               if (map.has(token))
-                addTmp(token)
+                addResultTmp(token)
             }
             else {
               map.forEach((ids, key) => {
                 if (operation === 'lt' && key < token)
-                  addTmp(ids)
+                  addResultTmp(ids)
                 else if (operation === 'lte' && key <= token)
-                  addTmp(ids)
+                  addResultTmp(ids)
                 else if (operation === 'gt' && key
                 > token)
-                  addTmp(ids)
+                  addResultTmp(ids)
                 else if (operation === 'gte' && key >= token)
-                  addTmp(ids)
+                  addResultTmp(ids)
               })
             }
           }
@@ -130,20 +129,20 @@ export class Index {
         const l = Object.keys(condition).length
         // console.log('tmp', map.size)
 
-        tmp.forEach((value, key) => {
+        resultTmp.forEach((value, key) => {
           if (value < l) {
-            tmp.delete(key)
+            resultTmp.delete(key)
             return
           }
 
-          tmp.set(key, 666)
+          resultTmp.set(key, 666)
         })
       }
 
       // return ids
     }
 
-    return Array.from(tmp.keys())
+    return Array.from(resultTmp.keys())
   }
 
   // search(query: Record<string, IndexQueryCondition[]>[]) {
