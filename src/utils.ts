@@ -49,7 +49,7 @@ export function unflattenObject(obj: Record<string, any>): Record<string, any> {
   return result
 }
 
-export function mapAdd(m: Map<string, number>, key: string) {
+export function addToMap(m: Map<string, number>, key: string) {
   return m.has(key)
     ? m.set(key, m.get(key) + 1)
     : m.set(key, 1)

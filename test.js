@@ -7,13 +7,12 @@ const index = new Index({
 })
 
 profile(() => items.forEach(item => index.add(item.id, item)), 'add')
-profile(() => index.search(
-  {
+profile(() => index.search({
+  select: {
     'data.number': [{ gte: 100, lte: 200 }, { gt: 500, lt: 1000 }], // 100-200, 501-999
     // 'data.body': [{ eq: 'hello world 821' }],
   },
-
-), 'search')
+}), 'search')
 
 profile(() => items.filter(item => (
   (item.data.number >= 100 && item.data.number <= 200) || (item.data.number > 500 && item.data.number < 1000)),

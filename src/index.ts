@@ -1,4 +1,4 @@
-import { flattenObject, mapAdd } from './utils'
+import { addToMap, flattenObject } from './utils'
 
 interface IndexOptions {
   id: string
@@ -6,7 +6,12 @@ interface IndexOptions {
   exclude?: string[]
 }
 
-export type IndexQuery = Record<string, IndexQueryCondition[]>[]
+export interface IndexQuery {
+  select: Record<string, IndexQueryCondition[]>
+  include?: string[]
+  exclude?: string[]
+}
+
 export type IndexQueryCondition = Partial<Record<IndexQueryOperator, any>>
 export type IndexQueryOperator =
   | 'eq'
@@ -39,67 +44,78 @@ export class Index {
     })
   }
 
-  search(query: Record<string, IndexQueryCondition[]>): Array<string> {
+  search(query: IndexQuery): Array<string> {
     const res = new Map<string, number>()
 
-    for (const [indexPath, conditions] of Object.entries(query)) {
-      const map = this.map.get(indexPath)
+    for (const [indexPath, conditions] of Object.entries(query.select)) {
+      const mapIndex = this.map.get(indexPath)
+      const tmp = new Map<string, number>()
 
-      if (!map)
+      if (!mapIndex)
         return []
 
-      const tmp = new Map<string, number>()
       for (const condition of conditions) {
         for (const [operation, value] of Object.entries(condition)) {
           if (operation === 'eq') {
-            if (map.has(value))
-              mapAdd(tmp, value)
+            if (mapIndex.has(value))
+              addToMap(tmp, value)
           }
           else {
-            [...map.keys()].forEach((key) => {
+            for (const key of mapIndex.keys()) {
               switch (operation) {
                 case 'lt':
                   if (key < value)
-                    mapAdd(tmp, key)
-                  return
+                    addToMap(tmp, key)
+                  break
                 case 'lte':
                   if (key <= value)
-                    mapAdd(tmp, key)
-                  return
+                    addToMap(tmp, key)
+                  break
                 case 'gt':
                   if (key > value)
-                    mapAdd(tmp, key)
-                  return
+                    addToMap(tmp, key)
+                  break
                 case 'gte':
                   if (key >= value)
-                    mapAdd(tmp, key)
+                    addToMap(tmp, key)
+                  break
               }
-            })
+            }
           }
         }
 
         const l = Object.keys(condition).length
 
-        tmp.forEach((value, key) => {
+        for (const [key, value] of tmp) {
           if (value < l)
             tmp.delete(key)
-        })
+        }
       }
 
-      tmp.forEach((value, key) => {
-        map.get(key)!.forEach((id) => {
-          mapAdd(res, id)
+      for (const key of tmp.keys()) {
+        mapIndex.get(key)!.forEach((id) => {
+          addToMap(res, id)
         })
-      })
+      }
     }
 
-    const l = Object.keys(query).length
-    res.forEach((value, key) => {
-      if (value < l)
+    const n = Object.keys(query.select).length
+    for (const [key, value] of res) {
+      if (value < n)
         res.delete(key)
-    })
+    }
+
+    if (!query.exclude) {
+      if (!query.include)
+        return Array.from(res.keys())
+
+      return Array.from(res.keys())
+        .filter(id => query.include!.includes(id))
+    }
 
     return Array.from(res.keys())
+      .concat(query.include || [])
+      .filter(id => !query.exclude?.includes(id))
   }
 
   export(cb: (key: string, value: Map<string, Array<string>>) => void) {
